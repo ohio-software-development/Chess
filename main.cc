@@ -13,5 +13,11 @@ int main() {
 
     board.display();
 
+    Move move;
+    move.move = 0b0010110100110001;
+    move.type = PAWN;
+
+    board.make_move(move);
+
     return 0;
 }

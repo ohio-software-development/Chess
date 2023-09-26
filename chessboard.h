@@ -10,6 +10,7 @@ class Chessboard {
         // Constructors
         Chessboard();
         Chessboard(const string fen_string);
+        Chessboard(const Chessboard& other);
         //Chessboard(const Chessboard& other);
         void operator = (const Chessboard& other);
 

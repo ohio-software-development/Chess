@@ -1,4 +1,5 @@
 #include "chessboard.h"
+#include "constants.h"
 #include <string>
 #include <iostream>
 using namespace std;
@@ -11,6 +12,24 @@ Chessboard::Chessboard() {
 Chessboard::Chessboard(const string fen_string) {
     reset();
     load_fen_string(fen_string);
+}
+
+Chessboard::Chessboard(const Chessboard& other) {
+    this->active_player         = other.active_player;
+
+    this->white_rook_bitboard   = other.white_rook_bitboard;
+    this->white_bishop_bitboard = other.white_bishop_bitboard;
+    this->white_knight_bitboard = other.white_knight_bitboard;
+    this->white_queen_bitboard  = other.white_queen_bitboard;
+    this->white_king_bitboard   = other.white_king_bitboard;
+    this->white_pawn_bitboard   = other.white_pawn_bitboard;
+
+    this->black_rook_bitboard   = other.black_rook_bitboard;
+    this->black_bishop_bitboard = other.black_bishop_bitboard;
+    this->black_knight_bitboard = other.black_knight_bitboard;
+    this->black_queen_bitboard  = other.black_queen_bitboard;
+    this->black_king_bitboard   = other.black_king_bitboard;
+    this->black_pawn_bitboard   = other.black_pawn_bitboard;
 }
 
 void Chessboard::operator = (const Chessboard& other) {
@@ -189,5 +208,64 @@ Chessboard Chessboard::make_move(Move move) {
     // Bits 6-11: target square index
     // Bits 12-15: flag (promotion type, etc)
 
+    Chessboard newBoard(*this);
     // To be implemented
+
+    unsigned short start_square  = ((move.move & start_square_mask) >> 10);
+    unsigned short target_square = ((move.move & target_square_mask) >> 4);
+    unsigned short flag          = ((move.move & flag_mask));
+
+    cout << start_square << endl;
+    cout << target_square << endl;
+    cout << flag << endl;
+    if (active_player == WHITE) {
+        switch (move.type) {
+            case PAWN:
+                newBoard.white_pawn_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case KNIGHT:
+                newBoard.white_knight_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case BISHOP:
+                newBoard.white_bishop_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case ROOK:
+                newBoard.white_rook_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case QUEEN:
+                newBoard.white_queen_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case KING:
+                newBoard.white_king_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+        }
+    } else {
+        switch (move.type) {
+            case PAWN:
+                newBoard.black_pawn_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case KNIGHT:
+                newBoard.black_knight_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case BISHOP:
+                newBoard.black_bishop_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case ROOK:
+                newBoard.black_rook_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case QUEEN:
+                newBoard.black_queen_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+            case KING:
+                newBoard.black_king_bitboard &= ((unsigned long long) 0 << (63 - start_square));
+                break;
+        }     
+    }
+
+    // How do I know which bitboard to check?
+    // I know the active player so that cuts my search space in half
+    // I don't know what type the piece is so I will have to search all the bitboards (indexing 6 bitboards max) O(n)
+    // I do know that the bit in that index is only ON in one of the bitboards
+    // If I know what piece it is, the speed will be O(1)
+
 }

@@ -18,8 +18,13 @@ enum PieceColor {
 };
 
 struct Move {
-    int move = 0b0000000000000000;
+    unsigned short move = 0;
+    PieceType type;
 };
+
+const unsigned short start_square_mask  = 0b1111110000000000;
+const unsigned short target_square_mask = 0b0000001111110000;
+const unsigned short flag_mask          = 0b0000000000001111;
 
 const string default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
 
