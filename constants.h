@@ -3,14 +3,13 @@
 #include <string>
 using namespace std;
 
-enum PieceType {
-    ROOK,
-    BISHOP,
-    KNIGHT,
-    QUEEN,
-    KING,
-    PAWN
-};
+// Piece types
+// 0 is pawn
+// 1 is knight
+// 2 is bishop
+// 3 is rook
+// 4 is queen
+// 5 is king
 
 enum PieceColor {
     BLACK,
@@ -19,7 +18,7 @@ enum PieceColor {
 
 struct Move {
     unsigned short move = 0;
-    PieceType type;
+    uint8_t type; // Number (0-5) that represents the type
 };
 
 const unsigned short start_square_mask  = 0b1111110000000000;

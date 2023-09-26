@@ -13,11 +13,21 @@ int main() {
 
     board.display();
 
-    Move move;
-    move.move = 0b0010110100110001;
-    move.type = PAWN;
+    // Whites turn
+    Move whites_move;   // 52   36
+    whites_move.move = 0b1101001001000010;
 
-    board.make_move(move);
+    Chessboard afterWhite = board.make_move(whites_move);
+    afterWhite.display();
+
+    // Blacks turn
+    Move blacks_move;
+    blacks_move.move = 0b0010110110110001;
+    blacks_move.type = 0;
+
+    Chessboard blacksResponse = afterWhite.make_move(blacks_move);
+
+    blacksResponse.display();
 
     return 0;
 }
