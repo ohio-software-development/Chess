@@ -1,24 +1,49 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 #include <string>
+#include <iostream>
 using namespace std;
 
-// Piece types
-// 0 is pawn
-// 1 is knight
-// 2 is bishop
-// 3 is rook
-// 4 is queen
-// 5 is king
+enum PieceType {
+    PAWN,   // 0
+    KNIGHT, // 1
+    BISHOP, // 2
+    ROOK,   // 3
+    QUEEN,  // 4
+    KING    // 5
+};
 
 enum PieceColor {
-    BLACK,
-    WHITE
+    WHITE,
+    BLACK
 };
 
 struct Move {
     unsigned short move = 0;
-    uint8_t type; // Number (0-5) that represents the type
+    PieceType type = PAWN; // Number (0-5) that represents the type
+    Move() { };
+    // User friendly move constructor that takes board positions in traditional chess notation
+    //                                I do not like the solution of taking the type as an arguement
+    Move(string start, string target, PieceType type) {
+        this->type = type;
+
+        // Convert start and target to index
+        // This assumes column letter is lowercase
+        int start_x = (int) start[0] - 97; // Casts char into ascii, then -97 to put 'a' on 0
+        int target_x = (int) target[0] - 97;
+
+        if (start_x  < 0) { start_x += 32; } // If the ascii would end up below 0 then it must have been in uppercase, then we fix it
+        if (target_x < 0) { target_x += 32; }
+
+        int start_index =  ((8 - (start[1] - '0')) * 8 + start_x);
+        int target_index = ((8 - (target[1]- '0')) * 8 + target_x);
+
+        // Set the move into short
+
+        move |= (start_index << 10);
+        move |= (target_index << 4);
+        move |= 0b0000; // Any possible flags
+    }
 };
 
 const unsigned short start_square_mask  = 0b1111110000000000;

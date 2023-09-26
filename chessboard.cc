@@ -125,21 +125,43 @@ void Chessboard::load_fen_string(string fen_str) {
         board_index++;
         fen_proccessed++;
     }
-
-    // Incomplete Fen-String Gaurd
-    if (fen_proccessed > fen_str.length()) { return; }
     
     // ======== 2. Active Player ========
+    if (fen_proccessed >= fen_str.length()) { return; } // Exit if fen is proccessed
+
     fen_proccessed++; // space character
     active_player = fen_str[fen_proccessed] == 'w' ? WHITE : BLACK;
     fen_proccessed++;
 
-    // 3. Castle rights
+    // ======== 3. Castle rights ========
+    if (fen_proccessed >= fen_str.length()) { return; }
+
+    fen_proccessed++; // space character
+    while(fen_str[fen_proccessed] != ' ') {
+        switch(fen_str[fen_proccessed]) {
+            case 'K':
+                // White Kingside Castle Rights
+                break;
+            case 'Q':
+                // White Queenside Castle Rights
+                break;
+            case 'k':
+                // Black Kingside Castle Rights
+                break;
+            case 'q':
+                // Black Queenside Castle Rights
+                break;
+        }
+        fen_proccessed++;
+    }
+    
+    // ======== 4. En passant targets ========
+    if (fen_proccessed >= fen_str.length()) { return; }
+    fen_proccessed++; // space character
         // Not implemented
-    // 4. En passant targets
+    // ======== 5. Halfmove clock ========
         // Not implemented
-    // 5. Turn Counters
-        // Not implemented
+    // ======== 6. Fullmove clock ========
 }
 
 void Chessboard::display() const {
@@ -202,14 +224,20 @@ Chessboard Chessboard::make_move(Move move) const {
     unsigned short target_square = ((move.move & target_square_mask) >> 4);
     unsigned short flag          = ((move.move & flag_mask));
 
+    // Possible flags
+    // Pawn promotion
+    // Castle Queenside
+    // Castle Kingside
+    // En passant
+
     if (active_player == WHITE) {
         // Flips the bit at the start square (probably should set it instead)
-        newBoard.white_bitboards[move.type] ^= ((unsigned long long) 1 << (63 - start_square));
+        newBoard.white_bitboards[move.type] &= ~((unsigned long long) 1 << (63 - start_square));
         // Set destination square to 1
         newBoard.white_bitboards[move.type] |= ((unsigned long long) 1 << (63 - target_square));
     } else {
-        // Same this for black bitboard
-        newBoard.black_bitboards[move.type] ^= ((unsigned long long) 1 << (63 - start_square));
+        // Same thing for black bitboard
+        newBoard.black_bitboards[move.type] &= ~((unsigned long long) 1 << (63 - start_square));
         newBoard.black_bitboards[move.type] |= ((unsigned long long) 1 << (63 - target_square));
     }
 
@@ -217,10 +245,4 @@ Chessboard Chessboard::make_move(Move move) const {
     newBoard.set_active_player(active_player == WHITE ? BLACK : WHITE);
 
     return newBoard;
-    // How do I know which bitboard to check?
-    // I know the active player so that cuts my search space in half
-    // I don't know what type the piece is so I will have to search all the bitboards (indexing 6 bitboards max) O(n)
-    // I do know that the bit in that index is only ON in one of the bitboards
-    // If I know what piece it is, the speed will be O(1)
-
 }

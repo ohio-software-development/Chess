@@ -8,26 +8,25 @@ string one_pawn_fen = "8/8/8/8/8/8/8/7P w KQkq - 0 0";
 
 int main() {
     Chessboard board;
+    string active_player;
+    string start, target;
+    int type;
 
     board.load_fen_string(default_fen);
+    while (true) {
+        active_player = board.get_active_player() == WHITE ? "White" : "Black";
+        cout << "Active Player: " << active_player << endl;
+        board.display();
 
-    board.display();
+        cout << "Enter the start square, target square, and piece type:" << endl;
+        cin >> start;
+        cin >> target;
+        cin >> type;
 
-    // Whites turn
-    Move whites_move;   // 52   36
-    whites_move.move = 0b1101001001000010;
+        Move newMove(start, target, (PieceType) type);
 
-    Chessboard afterWhite = board.make_move(whites_move);
-    afterWhite.display();
-
-    // Blacks turn
-    Move blacks_move;
-    blacks_move.move = 0b0010110110110001;
-    blacks_move.type = 0;
-
-    Chessboard blacksResponse = afterWhite.make_move(blacks_move);
-
-    blacksResponse.display();
+        board = board.make_move(newMove);
+    }
 
     return 0;
 }

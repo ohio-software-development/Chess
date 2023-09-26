@@ -20,7 +20,7 @@ class Chessboard {
         void clear();
 
         /**
-         * @brief changes the current board to the given fen-string https://www.chess.com/terms/fen-chess
+         * @brief attempts to interpret as much of the given fen-string as possible and load it https://www.chess.com/terms/fen-chess
         */
         void load_fen_string(string fen_str);
 
@@ -35,6 +35,11 @@ class Chessboard {
         void set_active_player(PieceColor color) { active_player = color; };
 
         /**
+         * @return an enum of the active player
+        */
+        PieceColor get_active_player() const { return active_player; };
+
+        /**
          * @return returns a new chessboard object after making the move
          *         THIS FUNCTION ASSUMES THE MOVE IS LEGAL
         */
@@ -45,7 +50,7 @@ class Chessboard {
         */
         //vector<Move> generate_moves();
     private:
-        // Game state
+        /// Game state
         PieceColor active_player;
         uint8_t halfmove_clock; // Counts the amount of turns (black and white) since the last pawn move or capture. Game ends in draw at 100
         uint8_t fullmove_clock; // Incremented by 1 after every black move
