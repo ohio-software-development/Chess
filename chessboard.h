@@ -1,6 +1,7 @@
 #ifndef CHESSBOARD_H
 #define CHESSBOARD_H
 #include "constants.h"
+#include "move.h"
 #include <vector>
 #include <string>
 using namespace std;
@@ -40,15 +41,20 @@ class Chessboard {
         PieceColor get_active_player() const { return active_player; };
 
         /**
-         * @return returns a new chessboard object after making the move
+         * @brief Makes a move on the current board
+         * @param move a move to take
+         * @param is_search if the move should be made recorded in the move history
          *         THIS FUNCTION ASSUMES THE MOVE IS LEGAL
         */
-        Chessboard make_move(Move move) const;
+        void make_move(Move move, bool is_search = false);
         
         /**
          * @return a list of legal moves for the current player
         */
-        //vector<Move> generate_moves();
+        vector<Move> generate_moves() const;
+
+        // bool is_legal_move(Move move);
+        
     private:
         /// Game state
         PieceColor active_player;
@@ -62,8 +68,22 @@ class Chessboard {
         // Rook board   - 3
         // Queeen board - 4
         // King board   - 5
-        unsigned long long white_bitboards[6];
-        unsigned long long black_bitboards[6];
+        unsigned long long bitboards[2][6];
+        // Color Bitboard stored like this:
+        // All White occupied squares     - 0
+        // All Black occupied squares     - 1
+        // Black & White occupied squares - 2
+        unsigned long long color_bitboards[3];
+
+        /// Pre Computed Attack Boards
+        // Board index returns a bitboard of the legal attacks from that index
+        unsigned long long king_attacks[64];
+        unsigned long long knight_attacks[64];
+        unsigned long long white_pawn_attacks[64];
+        unsigned long long black_pawn_attacks[64];
+        void compute_attack_boards();
+
+        PieceType squares[64];
 };
 
 #endif

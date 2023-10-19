@@ -10,7 +10,8 @@ enum PieceType {
     BISHOP, // 2
     ROOK,   // 3
     QUEEN,  // 4
-    KING    // 5
+    KING,   // 5
+    NONE    // 6
 };
 
 enum PieceColor {
@@ -18,40 +19,25 @@ enum PieceColor {
     BLACK
 };
 
-struct Move {
-    unsigned short move = 0;
-    PieceType type = PAWN; // Number (0-5) that represents the type
-    Move() { };
-    // User friendly move constructor that takes board positions in traditional chess notation
-    //                                I do not like the solution of taking the type as an arguement
-    Move(string start, string target, PieceType type) {
-        this->type = type;
-
-        // Convert start and target to index
-        // This assumes column letter is lowercase
-        int start_x = (int) start[0] - 97; // Casts char into ascii, then -97 to put 'a' on 0
-        int target_x = (int) target[0] - 97;
-
-        if (start_x  < 0) { start_x += 32; } // If the ascii would end up below 0 then it must have been in uppercase, then we fix it
-        if (target_x < 0) { target_x += 32; }
-
-        int start_index =  ((8 - (start[1] - '0')) * 8 + start_x);
-        int target_index = ((8 - (target[1]- '0')) * 8 + target_x);
-
-        // Set the move into short
-
-        move |= (start_index << 10);
-        move |= (target_index << 4);
-        move |= 0b0000; // Any possible flags
-    }
+enum Flags {
+    NO_FLAG,
+    EN_PASSANT,
+    CASTLE_Q,
+    CASTLE_K,
+    PROMOTION
 };
 
-const unsigned short start_square_mask  = 0b1111110000000000;
-const unsigned short target_square_mask = 0b0000001111110000;
-const unsigned short flag_mask          = 0b0000000000001111;
+// const uint8_t pawn_moves[2] = {-8,-16}; // Will calculate possible en passant later, can also invert this for black
+// Sliding moves will be calculated later
+
+const unsigned long long not_A_file = 0b0111111101111111011111110111111101111111011111110111111101111111;
+const unsigned long long not_B_file = 0b1011111110111111101111111011111110111111101111111011111110111111;
+const unsigned long long not_G_file = 0b1111110111111101111111011111110111111101111110111111110111111101;
+const unsigned long long not_H_file = 0b1111111011111110111111101111111011111110111111101111111011111110;
 
 const string default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
 
+// Board is indexed from the top left
 const string board_str = "+---+---+---+---+---+---+---+---+\n"
                          "|   |   |   |   |   |   |   |   | 8\n"
                          "+---+---+---+---+---+---+---+---+\n"

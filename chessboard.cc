@@ -1,56 +1,88 @@
 #include "chessboard.h"
 #include "constants.h"
+#include "move.h"
+#include "Bitboard_Utils.h"
 #include <string>
+#include <vector>
 #include <iostream>
 using namespace std;
+
+Bitboard_Utility BB_Utils;
 
 Chessboard::Chessboard() {
     clear();
     load_fen_string(default_fen);
+    compute_attack_boards();
 }
 
 Chessboard::Chessboard(const string fen_string) {
     clear();
     load_fen_string(fen_string);
+    compute_attack_boards();
 }
 
 Chessboard::Chessboard(const Chessboard& other) {
     clear();
     this->active_player = other.active_player;
 
-    // White bitboards
-    for (int i = 0; i < 6; i++) {
-        this->white_bitboards[i] = other.white_bitboards[i];
+    // Copy bitboards
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 6; j++) {
+            this->bitboards[i][j] = other.bitboards[i][j];
+        }
     }
-    // Black bitboards
+
     for (int i = 0; i < 6; i++) {
-        this->black_bitboards[i] = other.black_bitboards[i];
+        color_bitboards[WHITE] |= bitboards[WHITE][i];
+        color_bitboards[BLACK] |= bitboards[BLACK][i];
     }
+
+    // Copy square type board
+    for (int i = 0; i < 64; i++) {
+        this->squares[i] = other.squares[i];
+    }
+
 }
 
 void Chessboard::operator = (const Chessboard& other) {
     this->active_player = other.active_player;
 
-    // White bitboards
-    for (int i = 0; i < 6; i++) {
-        this->white_bitboards[i] = other.white_bitboards[i];
+    // Copy Bitboards
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 6; j++) {
+            this->bitboards[i][j] = other.bitboards[i][j];
+        }
     }
-    // Black bitboards
+
     for (int i = 0; i < 6; i++) {
-        this->black_bitboards[i] = other.black_bitboards[i];
+        color_bitboards[WHITE] |= bitboards[WHITE][i];
+        color_bitboards[BLACK] |= bitboards[BLACK][i];
+    }
+
+    // Copy square type board
+    for (int i = 0; i < 64; i++) {
+        this->squares[i] = other.squares[i];
     }
 }
 
 void Chessboard::clear() {
     active_player = WHITE;
+    halfmove_clock = 0;
+    fullmove_clock = 0;
 
-    // White bitboards
-    for (int i = 0; i < 6; i++) {
-        white_bitboards[i] = 0;
+    // Clear bitboards
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 6; j++) {
+            bitboards[i][j] = 0;
+        }
     }
-    // Black bitboards
-    for (int i = 0; i < 6; i++) {
-        black_bitboards[i] = 0;
+
+    color_bitboards[WHITE] = 0;
+    color_bitboards[BLACK] = 0;
+
+    // Clear square type board
+    for (int i = 0; i < 64; i++) {
+        squares[i] = NONE;
     }
 }
 
@@ -76,55 +108,46 @@ void Chessboard::load_fen_string(string fen_str) {
             fen_proccessed++;
             continue;
         }
+
+        PieceColor color;
         // If the token is uppercase, it is white
-        if ((int) token >= 65 && (int) token <= 90) { // If ascii is in capital letter range
-            // White
-            switch(token) {
-                case 'P':                                       // The 1 must be a 64 bit number, otherwise we would hit a bit shift limit of 32
-                    white_bitboards[0] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'N':
-                    white_bitboards[1] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'B':
-                    white_bitboards[2] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'R':
-                    white_bitboards[3] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'Q':
-                    white_bitboards[4] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'K':
-                    white_bitboards[5] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-            }
+        if (token >= 65 && token <= 90) {
+            color = WHITE;
+            token += 32; // To lowercase
         } else {
-            // Black
-            switch(token) {
-                case 'p':                                       // The 1 must be a 64 bit number, otherwise we would hit a bit shift limit of 32
-                    black_bitboards[0] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'n':
-                    black_bitboards[1] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'b':
-                    black_bitboards[2] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'r':
-                    black_bitboards[3] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'q':
-                    black_bitboards[4] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-                case 'k':
-                    black_bitboards[5] |= ((unsigned long long) 1 << (63 - board_index));
-                    break;
-            }
+            color = BLACK;
+        }
+
+        switch(token) {
+            case 'p':
+                BB_Utils.Set_Bit(bitboards[color][PAWN], board_index);
+                break;
+            case 'n':
+                BB_Utils.Set_Bit(bitboards[color][KNIGHT], board_index);
+                break;
+            case 'b':
+                BB_Utils.Set_Bit(bitboards[color][BISHOP], board_index);
+                break;
+            case 'r':
+                BB_Utils.Set_Bit(bitboards[color][ROOK], board_index);
+                break;
+            case 'q':
+                BB_Utils.Set_Bit(bitboards[color][QUEEN], board_index);
+                break;
+            case 'k':
+                BB_Utils.Set_Bit(bitboards[color][KING], board_index);
+                break;
         }
         board_index++;
         fen_proccessed++;
     }
+
+    // Compile Colored Bitboards
+    for (int i = 0; i < 6; i++) {
+        color_bitboards[WHITE] |= bitboards[WHITE][i];
+        color_bitboards[BLACK] |= bitboards[BLACK][i];
+    }
+    color_bitboards[2] = color_bitboards[0] | color_bitboards[1];
     
     // ======== 2. Active Player ========
     if (fen_proccessed >= fen_str.length()) { return; } // Exit if fen is proccessed
@@ -164,85 +187,122 @@ void Chessboard::load_fen_string(string fen_str) {
     // ======== 6. Fullmove clock ========
 }
 
-void Chessboard::display() const {
+void Chessboard::display() const { // If you can simplify this, go ahead
     string output = board_str;
-    for (int i = 0; i < 64; i++) {
-        // White Pieces
-        // These if-statements check if the index of the bit 'i' (left to right) is 1 (ON or TRUE) in the bitboard
-        if (((white_bitboards[0] >> 63 - i) & 1) == 1) { // White Pawns
-            output[board_indexes[i]] = 'P';
-        }
-        if (((white_bitboards[1] >> 63 - i) & 1) == 1) { // White Knights
-            output[board_indexes[i]] = 'N';
-        }
-        if (((white_bitboards[2] >> 63 - i) & 1) == 1) { // White Bishops
-            output[board_indexes[i]] = 'B';
-        }
-        if (((white_bitboards[3] >> 63 - i) & 1) == 1) { // White Rooks
-            output[board_indexes[i]] = 'R';
-        }
-        if (((white_bitboards[4] >> 63 - i) & 1) == 1) { // White Queens
-            output[board_indexes[i]] = 'Q';
-        }
-        if (((white_bitboards[5] >> 63 - i) & 1) == 1) { // White King
-            output[board_indexes[i]] = 'K';
-        }
+    char piece_chars[12] = {'P','N','B','R','Q','K','p','n','b','r','q','k'};
+    unsigned long long tmp_bitboard = 0;
+    int piece_index = 0;
 
-        // Black Pieces
-        if (((black_bitboards[0] >> 63 - i) & 1) == 1) { // Black Pawns
-            output[board_indexes[i]] = 'p';
-        }
-        if (((black_bitboards[1] >> 63 - i) & 1) == 1) { // Black Knights
-            output[board_indexes[i]] = 'n';
-        }
-        if (((black_bitboards[2] >> 63 - i) & 1) == 1) { // Black Bishops
-            output[board_indexes[i]] = 'b';
-        }
-        if (((black_bitboards[3] >> 63 - i) & 1) == 1) { // Black Rooks
-            output[board_indexes[i]] = 'r';
-        }
-        if (((black_bitboards[4] >> 63 - i) & 1) == 1) { // Black Queens
-            output[board_indexes[i]] = 'q';
-        }
-        if (((black_bitboards[5] >> 63 - i) & 1) == 1) { // Black King
-            output[board_indexes[i]] = 'k';
-        }
+    // White Pieces
+    for (int i = 0; i < 6; i++) {
+        // Type cast not neccesarily needed but provides clarity
+        tmp_bitboard = bitboards[WHITE][(PieceType) i];
 
+        while(tmp_bitboard != 0) {
+            piece_index = BB_Utils.Pop_LSB(tmp_bitboard);
+            output[board_indexes[piece_index]] = piece_chars[i];
+        }
     }
+
+    // Black Pieces
+    for (int i = 0; i < 6; i++) {
+        tmp_bitboard = bitboards[BLACK][(PieceType) i];
+
+        while(tmp_bitboard != 0) {
+            piece_index = BB_Utils.Pop_LSB(tmp_bitboard);
+            output[board_indexes[piece_index]] = piece_chars[i+6];
+        }
+    }
+
     cout << output << endl;
 }
 
-Chessboard Chessboard::make_move(Move move) const {
-    // Move format is as follows (ffffffttttttssss) => 6 bits for (0-63) board index start, 6 for target index, 4 flags (16 possible flags)
-    // Bits 0-5: start square index
-    // Bits 6-11: target square index
-    // Bits 12-15: flag (promotion type, etc)
+// Handles moving pieces without captures
+void Chessboard::make_move(Move move, bool is_search) { // Work in progress
+    unsigned short start_square  = move.start_index();
+    unsigned short target_square = move.target_index();
+    unsigned short flag          = move.flag();
 
-    Chessboard newBoard(*this);
+    // Still working on removing the dependency on the move.type value
+    // BB_Utils.Flip_Bits(bitboards[active_player][move.type], start_square, target_square);
 
-    unsigned short start_square  = ((move.move & start_square_mask) >> 10);
-    unsigned short target_square = ((move.move & target_square_mask) >> 4);
-    unsigned short flag          = ((move.move & flag_mask));
-
-    // Possible flags
-    // Pawn promotion
-    // Castle Queenside
-    // Castle Kingside
-    // En passant
-
-    if (active_player == WHITE) {
-        // Flips the bit at the start square (probably should set it instead)
-        newBoard.white_bitboards[move.type] &= ~((unsigned long long) 1 << (63 - start_square));
-        // Set destination square to 1
-        newBoard.white_bitboards[move.type] |= ((unsigned long long) 1 << (63 - target_square));
-    } else {
-        // Same thing for black bitboard
-        newBoard.black_bitboards[move.type] &= ~((unsigned long long) 1 << (63 - start_square));
-        newBoard.black_bitboards[move.type] |= ((unsigned long long) 1 << (63 - target_square));
-    }
+    BB_Utils.Flip_Bits(color_bitboards[active_player], start_square, target_square);
 
     // Swap the current turn
-    newBoard.set_active_player(active_player == WHITE ? BLACK : WHITE);
+    active_player = active_player == WHITE ? BLACK : WHITE;
+}
 
-    return newBoard;
+vector<Move> Chessboard::generate_moves() const { // Work in progress
+    vector<Move> legal_moves;
+    PieceColor non_active_player = active_player == WHITE ? BLACK : WHITE;
+
+    return legal_moves;
+}
+
+void Chessboard::compute_attack_boards() { // Work in progress
+    
+    // King
+    const int king_moves[8] = {9,8,7,1,-1,-7,-8,-9};
+    for (int i = 0; i < 64; i++) {
+        king_attacks[i] = 0; // Clear bitboard
+        for (int j = 0; j < 8; j++) {
+            BB_Utils.Set_Bit(king_attacks[i], i+king_moves[j]);
+        }
+
+        // Mask off moves that wrap around the board
+        if(i % 7 == 0) { // If the king is on the H file
+            king_attacks[i] &= not_A_file;
+        } else if (i % 8 == 0) { // If king is on A file
+            king_attacks[i] &= not_H_file;
+        }
+    }
+
+    // Knight
+    const int knight_moves[8] = {-17,-15,-10,-6,6,10,15,17};
+    for (int i = 0; i < 64; i++) {
+        knight_attacks[i] = 0; // Clear bitboard
+        for (int j = 0; j < 8; j++) {
+            BB_Utils.Set_Bit(knight_attacks[i], i+knight_moves[j]);
+        }
+
+        // Mask off moves that wrap around the board
+        if (i % 6 == 0 || i % 7 == 0) { // If knight is on the G or H file
+            knight_attacks[i] &= not_A_file & not_B_file;
+        } else if (i % 8 == 0 || i % 9 == 0) { // If knight is on the A or B file
+            knight_attacks[i] &= not_G_file & not_H_file;
+        }
+    }
+
+    // Pawn
+    const int white_pawn_attacked_squares[2] = {-9, -7};
+    for (int i = 0; i < 64; i++) {
+        white_pawn_attacks[i] |= 0; // Clear
+        if (i <= 7) { // White pawns can't attack when they are on the eigth rank, also they promote
+            continue;
+        }
+        BB_Utils.Set_Bit(white_pawn_attacks[i], i + white_pawn_attacked_squares[0]);
+        BB_Utils.Set_Bit(white_pawn_attacks[i], i + white_pawn_attacked_squares[1]);
+        // Clamp to board bounds
+        if (i % 7 == 0) { // If pawn is on H file
+            white_pawn_attacks[i] &= not_A_file;
+        } else if (i % 8 == 0) { // If pawn is on A file
+            white_pawn_attacks[i] &= not_H_file;
+        }
+    }
+
+    const int black_pawn_attacked_squares[2] = {9, 7};
+    for (int i = 0; i < 64; i++) {
+        black_pawn_attacks[i] |= 0; // Clear
+        if (i >= 55) { // Black pawns can't attack when they are on the first rank, also they promote
+            continue;
+        }
+        BB_Utils.Set_Bit(black_pawn_attacks[i], i + black_pawn_attacked_squares[0]);
+        BB_Utils.Set_Bit(black_pawn_attacks[i], i + black_pawn_attacked_squares[1]);
+        // Clamp to board bounds
+        if (i % 7 == 0) { // If pawn is on H file
+            black_pawn_attacks[i] &= not_A_file;
+        } else if (i % 8 == 0) { // If pawn is on A file
+            black_pawn_attacks[i] &= not_H_file;
+        }
+    }
 }
