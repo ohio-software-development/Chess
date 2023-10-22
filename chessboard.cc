@@ -21,54 +21,17 @@ Chessboard::Chessboard(const string fen_string) {
     compute_attack_boards();
 }
 
-Chessboard::Chessboard(const Chessboard& other) {
-    clear();
-    this->active_player = other.active_player;
-
-    // Copy bitboards
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 6; j++) {
-            this->bitboards[i][j] = other.bitboards[i][j];
-        }
-    }
-
-    for (int i = 0; i < 6; i++) {
-        color_bitboards[WHITE] |= bitboards[WHITE][i];
-        color_bitboards[BLACK] |= bitboards[BLACK][i];
-    }
-
-    // Copy square type board
-    for (int i = 0; i < 64; i++) {
-        this->type_board[i] = other.type_board[i];
-    }
-
-}
-
-void Chessboard::operator = (const Chessboard& other) {
-    this->active_player = other.active_player;
-
-    // Copy Bitboards
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 6; j++) {
-            this->bitboards[i][j] = other.bitboards[i][j];
-        }
-    }
-
-    for (int i = 0; i < 6; i++) {
-        color_bitboards[WHITE] |= bitboards[WHITE][i];
-        color_bitboards[BLACK] |= bitboards[BLACK][i];
-    }
-
-    // Copy square type board
-    for (int i = 0; i < 64; i++) {
-        this->type_board[i] = other.type_board[i];
-    }
-}
-
 void Chessboard::clear() {
     active_player = WHITE;
     halfmove_clock = 0;
     fullmove_clock = 0;
+    en_passant_target = "";
+
+    // Clear castle rights
+    castle_rights[WHITE][0] = false;
+    castle_rights[WHITE][1] = false;
+    castle_rights[BLACK][0] = false;
+    castle_rights[BLACK][1] = false;
 
     // Clear bitboards
     for (int i = 0; i < 2; i++) {
@@ -86,26 +49,25 @@ void Chessboard::clear() {
     }
 }
 
-void Chessboard::load_fen_string(string fen_str) {
+void Chessboard::load_fen_string(const string fen_str) {
     clear();
     int board_index = 0;
     int fen_proccessed = 0; // The fen-string indexes proccessed so far
     char token;
 
     // ======== 1. Board State ========
-    for (int i = 0; i < fen_str.length(); i++) {
-        token = fen_str[i];
+    for (fen_proccessed = 0; fen_proccessed < fen_str.length(); fen_proccessed++) {
+        token = fen_str[fen_proccessed];
 
         // Token Gaurds
         if (token == ' ') { break; }
-        if (token == '/') { fen_proccessed++; continue; }
+        if (token == '/') { continue; }
 
         // cout << "ASCII: "<< (int) token << " Token: " << token << endl; // Debug
 
         // If the token is an offset
-        if ((int) token >= 49 && (int) token <= 56) { // If ascii is between 49-56/1-8 inclusive
+        if ((int) token >= 49 && (int) token <= 56) { // If ascii is a number between 1-8 inclusive
             board_index += (token - '0'); // Convert to num
-            fen_proccessed++;
             continue;
         }
 
@@ -145,7 +107,6 @@ void Chessboard::load_fen_string(string fen_str) {
                 break;
         }
         board_index++;
-        fen_proccessed++;
     }
 
     // Compile Colored Bitboards
@@ -170,15 +131,19 @@ void Chessboard::load_fen_string(string fen_str) {
         switch(fen_str[fen_proccessed]) {
             case 'K':
                 // White Kingside Castle Rights
+                castle_rights[WHITE][0] = true;
                 break;
             case 'Q':
                 // White Queenside Castle Rights
+                castle_rights[WHITE][1] = true;
                 break;
             case 'k':
                 // Black Kingside Castle Rights
+                castle_rights[BLACK][0] = true;
                 break;
             case 'q':
                 // Black Queenside Castle Rights
+                castle_rights[BLACK][1] = true;
                 break;
         }
         fen_proccessed++;
@@ -188,11 +153,10 @@ void Chessboard::load_fen_string(string fen_str) {
     if (fen_proccessed >= fen_str.length()) { return; }
     fen_proccessed++; // space character before
 
-    if (fen_str[fen_proccessed] == '-') { // No en-passant targets
+    if (fen_str[fen_proccessed] == '-') { // No en-passant target
         fen_proccessed++;
-    } else {
-        string en_passant_target = fen_str.substr(fen_proccessed, 2);
-        // Store the en passant target somehow
+    } else { // Valid en-passant target
+        en_passant_target = fen_str.substr(fen_proccessed, 2);
         fen_proccessed += 2;
     }
 
@@ -252,17 +216,16 @@ void Chessboard::display_gamestate() const {
 }
 
 // Handles moving pieces without captures
-void Chessboard::make_move(Move move, bool is_search) { // Work in progress
-    unsigned short start_square  = move.start_index();
-    unsigned short target_square = move.target_index();
-    unsigned short flag          = move.flag();
+void Chessboard::make_move(Move move, bool is_search) {
+    unsigned short start  = move.start_index();
+    unsigned short target = move.target_index();
 
-    BB_Utils.Flip_Bits(bitboards[active_player][type_board[start_square]], start_square, target_square);
+    BB_Utils.Flip_Bits(bitboards[active_player][type_board[start]], start, target);
 
-    BB_Utils.Flip_Bits(color_bitboards[active_player], start_square, target_square);
+    BB_Utils.Flip_Bits(color_bitboards[active_player], start, target);
 
-    type_board[target_square] = type_board[start_square];
-    type_board[start_square] = NONE;
+    type_board[target] = type_board[start];
+    type_board[start] = NONE;
 
     // Swap the current turn
     active_player = active_player == WHITE ? BLACK : WHITE;
@@ -271,12 +234,11 @@ void Chessboard::make_move(Move move, bool is_search) { // Work in progress
 vector<Move> Chessboard::generate_moves() const { // Work in progress
     vector<Move> legal_moves;
     PieceColor non_active_player = active_player == WHITE ? BLACK : WHITE;
-
+        // There was code here but I removed it in a fit of rage
     return legal_moves;
 }
 
 void Chessboard::compute_attack_boards() { // Work in progress
-    
     // King
     const int king_moves[8] = {9,8,7,1,-1,-7,-8,-9};
     for (int i = 0; i < 64; i++) {

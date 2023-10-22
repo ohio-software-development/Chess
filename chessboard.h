@@ -3,7 +3,6 @@
 #include "constants.h"
 #include "move.h"
 #include <vector>
-#include <string>
 using namespace std;
 
 class Chessboard {
@@ -23,7 +22,7 @@ class Chessboard {
         /**
          * @brief attempts to interpret as much of the given fen-string as possible and load it https://www.chess.com/terms/fen-chess
         */
-        void load_fen_string(string fen_str);
+        void load_fen_string(const string fen_str);
 
         /**
          * @brief displays the board in the terminal
@@ -65,6 +64,13 @@ class Chessboard {
         PieceColor active_player;
         int halfmove_clock; // Counts the amount of turns (black and white) since the last pawn move or capture. Game ends in draw at 100
         int fullmove_clock; // Incremented by 1 after every black move
+        string en_passant_target;
+        /// Castle Rights
+        // castle_rights[WHITE][0] = white kingside
+        // castle_rights[WHITE][1] = white queenside
+        // castle_rights[BLACK][0] = black kingside
+        // castle_rights[BLACK][1] = black queenside
+        bool castle_rights[2][2];
         /// Bitboards
         // Bitboards are stored like this:
         // Pawn board   - 0 / PAWN enum

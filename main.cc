@@ -1,4 +1,3 @@
-#include "constants.h"
 #include "chessboard.h"
 #include <iostream>
 using namespace std;
@@ -8,7 +7,7 @@ string one_pawn_fen = "P7/8/8/8/8/8/8/8 w KQkq - 22 59";
 string kings_battle_fen = "4k3/8/8/8/8/8/8/4K3 w KQkq - 0 0";
 
 int main() {
-    Chessboard board(one_pawn_fen);
+    Chessboard board;
     string active_player;
     string start, target;
 
@@ -17,9 +16,9 @@ int main() {
         cout << "Active Player: " << active_player << endl;
         board.display();
 
-        cout << "\nStart Square: ";
+        cout << "Start Square: ";
         cin >> start;
-        cout << "\nTarget Square: ";
+        cout << "Target Square: ";
         cin >> target;
 
         Move newMove(start, target);
