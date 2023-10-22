@@ -31,6 +31,11 @@ class Chessboard {
         void display() const;
 
         /**
+         * @brief displays current gamestate information like, halfmove/fullmove clocks, active player, etc
+        */
+        void display_gamestate() const;
+
+        /**
          * @brief Sets the current active player to the given piececolor enum
         */
         void set_active_player(PieceColor color) { active_player = color; };
@@ -58,16 +63,16 @@ class Chessboard {
     private:
         /// Game state
         PieceColor active_player;
-        uint8_t halfmove_clock; // Counts the amount of turns (black and white) since the last pawn move or capture. Game ends in draw at 100
-        uint8_t fullmove_clock; // Incremented by 1 after every black move
+        int halfmove_clock; // Counts the amount of turns (black and white) since the last pawn move or capture. Game ends in draw at 100
+        int fullmove_clock; // Incremented by 1 after every black move
         /// Bitboards
         // Bitboards are stored like this:
-        // Pawn board   - 0
-        // Knight board - 1
-        // Bishop board - 2
-        // Rook board   - 3
-        // Queeen board - 4
-        // King board   - 5
+        // Pawn board   - 0 / PAWN enum
+        // Knight board - 1 / KNIGHT
+        // Bishop board - 2 / BISHOP
+        // Rook board   - 3 / ROOK
+        // Queen board  - 4 / QUEEN
+        // King board   - 5 / KING
         unsigned long long bitboards[2][6];
         // Color Bitboard stored like this:
         // All White occupied squares     - 0
@@ -83,7 +88,7 @@ class Chessboard {
         unsigned long long black_pawn_attacks[64];
         void compute_attack_boards();
 
-        PieceType squares[64];
+        PieceType type_board[64];
 };
 
 #endif

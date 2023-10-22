@@ -4,24 +4,23 @@
 using namespace std;
 
 string all_pawn_fen = "pppppppp/pppppppp/pppppppp/pppppppp/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w KQkq - 0 0";
-string one_pawn_fen = "8/8/8/8/8/8/8/7P w KQkq - 0 0";
+string one_pawn_fen = "P7/8/8/8/8/8/8/8 w KQkq - 22 59";
 string kings_battle_fen = "4k3/8/8/8/8/8/8/4K3 w KQkq - 0 0";
 
 int main() {
-    Chessboard board(all_pawn_fen);
+    Chessboard board(one_pawn_fen);
     string active_player;
     string start, target;
-    int type;
 
     while (true) {
         active_player = board.get_active_player() == WHITE ? "White" : "Black";
         cout << "Active Player: " << active_player << endl;
         board.display();
 
-        cout << "Enter the start square, target square, and piece type:" << endl;
+        cout << "\nStart Square: ";
         cin >> start;
+        cout << "\nTarget Square: ";
         cin >> target;
-        cin >> type;
 
         Move newMove(start, target);
 

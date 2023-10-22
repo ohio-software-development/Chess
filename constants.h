@@ -38,6 +38,7 @@ const unsigned long long not_H_file = 0b1111111011111110111111101111111011111110
 const string default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
 
 // Board is indexed from the top left
+// Binary 0000...001 is top left, 1000...000 is bottom right
 const string board_str = "+---+---+---+---+---+---+---+---+\n"
                          "|   |   |   |   |   |   |   |   | 8\n"
                          "+---+---+---+---+---+---+---+---+\n"

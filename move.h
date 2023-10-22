@@ -10,6 +10,7 @@
 #define MOVE_H
 
 #include <string>
+#include <iostream>
 using namespace std;
 
 const unsigned short start_square_mask  = 0b1111110000000000;
@@ -37,9 +38,12 @@ struct Move {
         if (start_x  < 0) { start_x += 32; } // If the ascii would end up below 0 then it must have been in uppercase, then we fix it
         if (target_x < 0) { target_x += 32; }
 
+        cout << start_x << " " << target_x << endl;
 
-        int start_index  = ((8 - (start[1] - '0')) * 8 + start_x);
-        int target_index = ((8 - (target[1]- '0')) * 8 + target_x);
+        int start_index  = ((start[1] - '0') * 8 + start_x);
+        int target_index = ((target[1]- '0') * 8 + target_x);
+
+        cout << start_index << " " << target_index << endl;
 
         move = (start_index << 4 | target_index);
     }

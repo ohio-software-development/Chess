@@ -39,7 +39,7 @@ Chessboard::Chessboard(const Chessboard& other) {
 
     // Copy square type board
     for (int i = 0; i < 64; i++) {
-        this->squares[i] = other.squares[i];
+        this->type_board[i] = other.type_board[i];
     }
 
 }
@@ -61,7 +61,7 @@ void Chessboard::operator = (const Chessboard& other) {
 
     // Copy square type board
     for (int i = 0; i < 64; i++) {
-        this->squares[i] = other.squares[i];
+        this->type_board[i] = other.type_board[i];
     }
 }
 
@@ -82,7 +82,7 @@ void Chessboard::clear() {
 
     // Clear square type board
     for (int i = 0; i < 64; i++) {
-        squares[i] = NONE;
+        type_board[i] = NONE;
     }
 }
 
@@ -121,21 +121,27 @@ void Chessboard::load_fen_string(string fen_str) {
         switch(token) {
             case 'p':
                 BB_Utils.Set_Bit(bitboards[color][PAWN], board_index);
+                type_board[board_index] = PAWN;
                 break;
             case 'n':
                 BB_Utils.Set_Bit(bitboards[color][KNIGHT], board_index);
+                type_board[board_index] = KNIGHT;
                 break;
             case 'b':
                 BB_Utils.Set_Bit(bitboards[color][BISHOP], board_index);
+                type_board[board_index] = BISHOP;
                 break;
             case 'r':
                 BB_Utils.Set_Bit(bitboards[color][ROOK], board_index);
+                type_board[board_index] = ROOK;
                 break;
             case 'q':
                 BB_Utils.Set_Bit(bitboards[color][QUEEN], board_index);
+                type_board[board_index] = QUEEN;
                 break;
             case 'k':
                 BB_Utils.Set_Bit(bitboards[color][KING], board_index);
+                type_board[board_index] = KING;
                 break;
         }
         board_index++;
@@ -180,14 +186,36 @@ void Chessboard::load_fen_string(string fen_str) {
     
     // ======== 4. En passant targets ========
     if (fen_proccessed >= fen_str.length()) { return; }
-    fen_proccessed++; // space character
-        // Not implemented
+    fen_proccessed++; // space character before
+
+    if (fen_str[fen_proccessed] == '-') { // No en-passant targets
+        fen_proccessed++;
+    } else {
+        string en_passant_target = fen_str.substr(fen_proccessed, 2);
+        // Store the en passant target somehow
+        fen_proccessed += 2;
+    }
+
     // ======== 5. Halfmove clock ========
-        // Not implemented
+    if (fen_proccessed >= fen_str.length()) { return; }
+    fen_proccessed++; // space character before
+
+    string halfmove_count = fen_str.substr(fen_proccessed, fen_str.find(' ', fen_proccessed) - fen_proccessed);
+    halfmove_clock = stoi(halfmove_count);
+
+    fen_proccessed += halfmove_count.length();
+
     // ======== 6. Fullmove clock ========
+    if (fen_proccessed >= fen_str.length()) { return; }
+    fen_proccessed++; // space character before
+
+    string fullmove_count = fen_str.substr(fen_proccessed);
+    fullmove_clock = stoi(fullmove_count);
+
+    fen_proccessed += fullmove_count.length();
 }
 
-void Chessboard::display() const { // If you can simplify this, go ahead
+void Chessboard::display() const {
     string output = board_str;
     char piece_chars[12] = {'P','N','B','R','Q','K','p','n','b','r','q','k'};
     unsigned long long tmp_bitboard = 0;
@@ -217,16 +245,24 @@ void Chessboard::display() const { // If you can simplify this, go ahead
     cout << output << endl;
 }
 
+void Chessboard::display_gamestate() const {
+    cout << " Active Player: " << (active_player == WHITE ? "White" : "Black") << endl;
+    cout << "Halfmove Clock: " << halfmove_clock << endl;
+    cout << "Fullmove Clock: " << fullmove_clock << endl;
+}
+
 // Handles moving pieces without captures
 void Chessboard::make_move(Move move, bool is_search) { // Work in progress
     unsigned short start_square  = move.start_index();
     unsigned short target_square = move.target_index();
     unsigned short flag          = move.flag();
 
-    // Still working on removing the dependency on the move.type value
-    // BB_Utils.Flip_Bits(bitboards[active_player][move.type], start_square, target_square);
+    BB_Utils.Flip_Bits(bitboards[active_player][type_board[start_square]], start_square, target_square);
 
     BB_Utils.Flip_Bits(color_bitboards[active_player], start_square, target_square);
+
+    type_board[target_square] = type_board[start_square];
+    type_board[start_square] = NONE;
 
     // Swap the current turn
     active_player = active_player == WHITE ? BLACK : WHITE;
